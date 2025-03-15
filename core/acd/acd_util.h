@@ -23,4 +23,18 @@ typedef struct approximateConvexDecompositionIndexedMesh {
     glm::vec3 color;
 } ACDIndexedMesh;
 
+std::vector<float> GetTransformedVertices(ACDIndexedMesh mesh, glm::mat4 model) {
+    
+    std::vector<float> projectedVertices = std::vector<float>();
+    
+    for (int i = 0; i < mesh.vertices.size()/8; i++) {
+        glm::vec3 vertex = glm::vec3(mesh.vertices[i * 8], mesh.vertices[i * 8 + 1], mesh.vertices[i * 8 + 2]);
+        glm::vec3 projected = glm::vec3(model * glm::vec4(vertex, 1.0));
+        projectedVertices.push_back(projected.x);
+        projectedVertices.push_back(projected.y);
+        projectedVertices.push_back(projected.z);
+    }
+    return projectedVertices;
+}
+
 #endif /* acd_util_h */

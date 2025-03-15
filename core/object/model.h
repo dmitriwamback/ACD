@@ -99,7 +99,15 @@ void Model::Render(Shader shader) {
     glm::mat4 model = CreateModelMatrix();
     shader.SetMatrix4("model", model);
     
+    Ray ray{};
+    ray.origin = camera.position;
+    ray.direction = camera.mouseRayDirection;
+    
+    glm::mat4 modelMatrix = CreateModelMatrix();
+    
     for (ACDIndexedMesh mesh : processedMeshes) {
+        
+        std::optional<Intersection> intersect = Raycast(ray, GetTransformedVertices(mesh, modelMatrix), mesh.indices);
         
         glBindVertexArray(mesh.vao);
         glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
@@ -108,6 +116,9 @@ void Model::Render(Shader shader) {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), &mesh.indices[0], GL_STATIC_DRAW);
         
         shader.SetVector3("color", mesh.color);
+        if (intersect) {
+            shader.SetVector3("color", glm::vec3(1.0f, 0.0f, 0.0f));
+        }
         
         glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
     }

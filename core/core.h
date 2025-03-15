@@ -29,13 +29,14 @@ GLFWwindow* window;
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "object/camera.h"
+#include "helper/raycast.h"
 #include "acd/acd_util.h"
 #include "object/shader.h"
 #include "object/object.h"
 
 #include "acd/acd.h"
 #include "object/model.h"
-#include "object/camera.h"
 
 void initialize() {
     if (!glfwInit()) {
