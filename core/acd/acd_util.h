@@ -8,6 +8,8 @@
 #ifndef acd_util_h
 #define acd_util_h
 #include <set>
+#include <map>
+#include <queue>
 
 typedef struct approximateConvexDecompositionTriangle {
     uint32_t indices[3];
@@ -18,6 +20,7 @@ typedef struct approximateConvexDecompositionIndexedMesh {
     std::vector<float> vertices;
     std::vector<uint32_t> indices;
     uint32_t vao, vbo, ibo;
+    glm::vec3 color;
 } ACDIndexedMesh;
 
 #endif /* acd_util_h */
