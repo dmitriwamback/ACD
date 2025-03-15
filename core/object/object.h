@@ -21,10 +21,13 @@ public:
     void Decompose(int maxClusters);
 
     std::vector<ACDTriangle> ConstructAdjacency(ACDIndexedMesh mesh);
-    std::vector<std::vector<ACDTriangle>> ACD(std::vector<ACDTriangle>& triangles, int maxClusters);
+    std::vector<std::vector<ACDTriangle>> ACD(std::vector<ACDTriangle>& triangles, ACDIndexedMesh mesh, int maxClusters);
     ACDIndexedMesh CreateConvexMesh(const std::vector<ACDTriangle>& cluster, ACDIndexedMesh mesh);
     glm::mat4 CreateModelMatrix();
-    float ComputeConcavity(const std::vector<ACDTriangle>& triangles, const std::set<uint32_t>& cluster, uint32_t newTriangleIndex);
+    float ComputeConcavity(const std::vector<ACDTriangle>& triangles, const std::set<uint32_t>& cluster, uint32_t newTriangleIndex, ACDIndexedMesh mesh);
+    ACDConvexHull ComputeConvexHull(const std::vector<glm::vec3>& cluster);
+    float DistanceFromHull(const ACDConvexHull& hull, const glm::vec3& point);
+    glm::vec3 GetVertexFromIndex(ACDIndexedMesh& object, uint32_t index);
 };
 
 
@@ -54,12 +57,102 @@ std::vector<ACDTriangle> RObject::ConstructAdjacency(ACDIndexedMesh mesh) {
     return triangles;
 }
 
-float RObject::ComputeConcavity(const std::vector<ACDTriangle>& triangles, const std::set<uint32_t>& cluster, uint32_t newTriangleIndex) {
-
-    return 0.01f;
+glm::vec3 RObject::GetVertexFromIndex(ACDIndexedMesh& object, uint32_t index) {
+    uint32_t stride = 8;
+    uint32_t vertex = index * stride;
+    
+    return glm::vec3(object.vertices[vertex], object.vertices[vertex+1], object.vertices[vertex+2]);
 }
 
-std::vector<std::vector<ACDTriangle>> RObject::ACD(std::vector<ACDTriangle>& triangles, int maxClusters) {
+float RObject::DistanceFromHull(const ACDConvexHull& hull, const glm::vec3& point) {
+    
+    float mindst = FLT_MAX;
+    if (hull.faces.empty()) {
+        std::cout << "empty hull\n";
+        return 0.0f;
+    }
+    
+    for (const auto& face : hull.faces) {
+        glm::vec3 A = hull.vertices[face[0]];
+        glm::vec3 B = hull.vertices[face[1]];
+        glm::vec3 C = hull.vertices[face[2]];
+        
+        glm::vec3 normal = glm::normalize(glm::cross(B - A, C - A));
+        
+        float dst = glm::dot(point - A, normal);
+        mindst = std::min(dst, abs(dst));
+    }
+    
+    return mindst;
+}
+
+ACDConvexHull RObject::ComputeConvexHull(const std::vector<glm::vec3>& cluster) {
+    
+    if (cluster.size() < 4) {
+        std::cout << "Invalid\n";
+        return {cluster, {}};
+    }
+        
+    ACDConvexHull hull;
+    
+    int minx = 0, maxx = 0, miny = 0, maxy = 0, minz = 0, maxz = 0;
+    for (int i = 1; i < cluster.size(); i++) {
+        if (cluster[i].x < cluster[minx].x) minx = i;
+        if (cluster[i].x > cluster[maxx].x) maxx = i;
+        if (cluster[i].y < cluster[miny].y) miny = i;
+        if (cluster[i].y > cluster[maxy].y) maxy = i;
+        if (cluster[i].z < cluster[minz].z) minz = i;
+        if (cluster[i].z > cluster[maxz].z) maxz = i;
+    }
+    
+    std::set<int> foundation = {minx, maxx, miny, maxy, minz, maxz};
+    for (int index : foundation) {
+        hull.vertices.push_back(cluster[index]);
+    }
+    
+    if (hull.vertices.size() >= 4) {
+        hull.faces.push_back({0, 1, 2});
+        hull.faces.push_back({0, 1, 3});
+        hull.faces.push_back({0, 2, 3});
+        hull.faces.push_back({1, 2, 3});
+    }
+    
+    std::cout << hull.faces.size() << "FACES" << '\n';
+    
+    return hull;
+}
+
+float RObject::ComputeConcavity(const std::vector<ACDTriangle>& triangles, const std::set<uint32_t>& cluster, uint32_t newTriangleIndex, ACDIndexedMesh mesh) {
+    
+    std::vector<glm::vec3> clusterPoints;
+    
+    for (uint32_t idx : cluster) {
+        for (int i = 0; i < 3; i++) {
+            clusterPoints.push_back(GetVertexFromIndex(mesh, triangles[idx].indices[i]));
+        }
+    }
+    
+    if (clusterPoints.size() == 3) {
+        glm::vec3 fourthPoint = clusterPoints[0] + glm::vec3(0.01f, 0.01f, 0.01f);
+        clusterPoints.push_back(fourthPoint);
+    }
+        
+    ACDConvexHull hull = ComputeConvexHull(clusterPoints);
+    
+    const ACDTriangle newTriangle = triangles[newTriangleIndex];
+    
+    float maxDev = 0.0f;
+    
+    for (int i = 0; i < 3; i++) {
+        glm::vec3 vertex = GetVertexFromIndex(mesh, newTriangle.indices[i]);
+        float deviation = DistanceFromHull(hull, vertex);
+        maxDev = std::max(maxDev, deviation);
+    }
+        
+    return maxDev;
+}
+
+std::vector<std::vector<ACDTriangle>> RObject::ACD(std::vector<ACDTriangle>& triangles, ACDIndexedMesh mesh, int maxClusters) {
     
     std::set<uint32_t> unprocessed;
     for (size_t i = 0; i < triangles.size(); i++) {
@@ -84,9 +177,11 @@ std::vector<std::vector<ACDTriangle>> RObject::ACD(std::vector<ACDTriangle>& tri
             for (uint32_t neighbor : triangles[curr].neighbors) {
                 if (unprocessed.find(neighbor) != unprocessed.end()) {
 
-                    float concavity = ComputeConcavity(triangles, cluster, neighbor);
+                    float concavity = ComputeConcavity(triangles, cluster, neighbor, mesh);
+                    
+                    std::cout << concavity << "CONCAVITY\n";
 
-                    if (concavity < 0.1f) {
+                    if (concavity < 0.5f) {
                         queue.push(neighbor);
                         cluster.insert(neighbor);
                         unprocessed.erase(neighbor);
@@ -153,7 +248,7 @@ void RObject::Decompose(int maxClusters = 10) {
     
     for (ACDIndexedMesh mesh : meshes) {
         std::vector<ACDTriangle> triangles = ConstructAdjacency(mesh);
-        std::vector<std::vector<ACDTriangle>> convexClusters = ACD(triangles, maxClusters);
+        std::vector<std::vector<ACDTriangle>> convexClusters = ACD(triangles, mesh, maxClusters);
         
         float t = 0.0f;
         
@@ -162,7 +257,7 @@ void RObject::Decompose(int maxClusters = 10) {
             srand(time(0) + t);
             convexMesh.color = glm::vec3(rand()%255 / 255.0, rand()%255 / 255.0, rand()%255 / 255.0);
             processedMeshes.push_back(convexMesh);
-            t += 10.0f;
+            t += 100.0f;
         }
     }
 }

@@ -23,6 +23,11 @@ typedef struct approximateConvexDecompositionIndexedMesh {
     glm::vec3 color;
 } ACDIndexedMesh;
 
+typedef struct approximateConvexHull {
+    std::vector<glm::vec3> vertices;
+    std::vector<std::array<int, 3>> faces;
+} ACDConvexHull;
+
 std::vector<float> GetTransformedVertices(ACDIndexedMesh mesh, glm::mat4 model) {
     
     std::vector<float> projectedVertices = std::vector<float>();
