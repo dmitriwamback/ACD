@@ -29,11 +29,15 @@ GLFWwindow* window;
 #include <glm/vec4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "helper/thread_pool.h"
 #include "object/camera.h"
 #include "helper/raycast.h"
 #include "acd/acd_util.h"
 #include "object/shader.h"
 #include "object/object.h"
+
+#include "helper/noise.h"
+#include "object/terrain.h"
 
 #include "acd/acd.h"
 #include "object/model.h"
@@ -63,6 +67,7 @@ void initialize() {
     
     Shader shader = Shader::Create("/Users/dmitriwamback/Documents/Projects/GJK/GJK/shader/main");
     RObject* model = Model::Create("test");
+    //RObject* terrain = Terrain::Create();
     
     camera.Initialize();
     
@@ -89,6 +94,7 @@ void initialize() {
         shader.SetMatrix4("lookAt", camera.lookAt);
         
         model->Render(shader);
+        //terrain->Render(shader);
         
         glfwPollEvents();
         glfwSwapBuffers(window);

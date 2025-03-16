@@ -21,7 +21,7 @@ RObject* Model::Create(std::string assetPath) {
     RObject* model = new Model();
     
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile("/Users/dmitriwamback/Documents/models/blendermonkey.obj",
+    const aiScene *scene = importer.ReadFile("/Users/dmitriwamback/Documents/models/azortozha.obj",
                                              aiProcess_Triangulate |
                                              aiProcess_FlipUVs |
                                              aiProcess_JoinIdenticalVertices |
@@ -30,7 +30,7 @@ RObject* Model::Create(std::string assetPath) {
     aiNode* rootNode = scene->mRootNode;
     static_cast<Model*>(model)->ProcessNode(rootNode, scene);
     static_cast<Model*>(model)->Decompose(1000);
-    model->scale    = glm::vec3(5.0f, 5.0f, 5.0f);
+    model->scale    = glm::vec3(2.0f, 2.0f, 2.0f);
     model->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     model->position = glm::vec3(0.0f);
     
@@ -121,6 +121,10 @@ void Model::Render(Shader shader) {
         }
         
         glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
+        
+        shader.SetVector3("color", glm::vec3(0.0f, 0.0f, 0.0f));
+        glDrawElements(GL_LINES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_POINTS, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
     }
 }
 
