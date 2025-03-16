@@ -63,7 +63,7 @@ RObject* Terrain::Create() {
         }
     }
     
-    ACDIndexedMesh m_mesh;
+    Mesh m_mesh;
     m_mesh.vertices = vertices;
     m_mesh.indices = indices;
     
@@ -114,7 +114,7 @@ void Terrain::Render(Shader shader) {
     
     glm::mat4 modelMatrix = CreateModelMatrix();
     
-    for (ACDIndexedMesh mesh : processedMeshes) {
+    for (Mesh mesh : processedMeshes) {
         
         std::optional<Intersection> intersect = Raycast(ray, GetTransformedVertices(mesh, modelMatrix), mesh.indices);
         

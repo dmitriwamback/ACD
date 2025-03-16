@@ -11,24 +11,24 @@
 #include <map>
 #include <queue>
 
-typedef struct approximateConvexDecompositionTriangle {
+typedef struct triangle {
     uint32_t indices[3];
     std::set<uint32_t> neighbors;
-} ACDTriangle;
+} Triangle;
 
-typedef struct approximateConvexDecompositionIndexedMesh {
+typedef struct mesh {
     std::vector<float> vertices;
     std::vector<uint32_t> indices;
     uint32_t vao, vbo, ibo;
     glm::vec3 color;
-} ACDIndexedMesh;
+} Mesh;
 
-typedef struct approximateConvexHull {
+typedef struct convexHull {
     std::vector<glm::vec3> vertices;
     std::vector<std::array<int, 3>> faces;
-} ACDConvexHull;
+} ConvexHull;
 
-std::vector<float> GetTransformedVertices(ACDIndexedMesh mesh, glm::mat4 model) {
+std::vector<float> GetTransformedVertices(Mesh mesh, glm::mat4 model) {
     
     std::vector<float> projectedVertices = std::vector<float>();
     

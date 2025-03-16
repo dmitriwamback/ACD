@@ -21,7 +21,7 @@ RObject* Model::Create(std::string assetPath) {
     RObject* model = new Model();
     
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile("/Users/dmitriwamback/Documents/models/azortozha.obj",
+    const aiScene *scene = importer.ReadFile("/Users/dmitriwamback/Documents/models/blendermonkey.obj",
                                              aiProcess_Triangulate |
                                              aiProcess_FlipUVs |
                                              aiProcess_JoinIdenticalVertices |
@@ -52,7 +52,7 @@ void Model::ProcessMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<float>      m_vertices;
     std::vector<uint32_t>   m_indices;
     
-    ACDIndexedMesh m_mesh{};
+    Mesh m_mesh{};
     
     for (int i = 0; i < mesh->mNumVertices; i++) {
         glm::vec3 vertexVector;
@@ -105,7 +105,7 @@ void Model::Render(Shader shader) {
     
     glm::mat4 modelMatrix = CreateModelMatrix();
     
-    for (ACDIndexedMesh mesh : processedMeshes) {
+    for (Mesh mesh : processedMeshes) {
         
         std::optional<Intersection> intersect = Raycast(ray, GetTransformedVertices(mesh, modelMatrix), mesh.indices);
         
